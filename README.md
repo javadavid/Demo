@@ -13,6 +13,7 @@ You will need the following things properly installed on your computer.
 * [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 * [Maven 3.5.3](https://maven.apache.org/download.cgi)
 * [MySQL JDBC Driver](https://dev.mysql.com/downloads/connector/j/5.1.html)
+* [Postman](https://www.getpostman.com/)
 
 ## Installation
 
@@ -68,8 +69,15 @@ In this Flow Filtering customers by different type of criteria and build Dynamic
 * Update the customer if exist.
 
 ![](images/put.png)
+### Unit Test
+* Munit
+* Mock up service by using mock Component
+* Verification
+* Choice 100% coverage
 
-### Testing
+![](images/unitTest.png)
+
+### Other Testing
 * List Customers - ```http://127.0.0.1:8081/api/customers?offset=0&limit=2&startdate=2018-04-01&enddate=2018-10-01```
   - offset: Specify the page number that you want to retrieve
   - limit: Specify The number of rows in a page request
