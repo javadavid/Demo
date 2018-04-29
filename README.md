@@ -71,7 +71,7 @@ In this Flow Filtering customers by different type of criteria and build Dynamic
 ![](images/put.png)
 ### Unit Test
 * Munit
-* Mock up service by using mock Component
+* Mock up service by using mock Component, etc mock database results
 * Verification
 * Choice 100% coverage
 
