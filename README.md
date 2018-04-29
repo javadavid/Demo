@@ -50,7 +50,7 @@ In this Flow Filtering customers by different type of criteria and build Dynamic
 
 ### Implement Create Customer Flow
 * Insert the customer in the DB.
-* return the customer plus the id as a response
+* return the customer plus the id as a response.
 
 ![](images/post.png)
 
