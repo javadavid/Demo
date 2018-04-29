@@ -21,6 +21,7 @@ You will need the following things properly installed on your computer.
 * Import Demo into the Mulesoft Anypoint Studio
 * If not use `Maven` need to manually add the MySQL JDBC Driver to the project.
 * Change the database properties in the file `mule-app.properties`
+* Turn on Debug ```<AsyncLogger name="org.mule.api.processor.LoggerMessageProcessor" level="DEBUG"/>```
 
 
 ## Running / Development
