@@ -74,9 +74,13 @@ In this Flow, Filtering customers by different type of criteria and build Dynami
 * Mock Components, etc mock database results
 * Verification
 * Choice 100% coverage
-* Exception Handling - User not found, return `404`
+* User not found, return `404`
 
 ![](images/unitTest.png)
+
+### Exception Handling
+
+![](images/exception.png)
 
 ### Other Testing
 * List Customers - ```http://127.0.0.1:8081/api/customers?offset=0&limit=2&startdate=2018-04-01&enddate=2018-10-01```
