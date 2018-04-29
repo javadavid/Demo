@@ -10,16 +10,23 @@ http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/moc
     <munit:config mock-connectors="false" mock-inbounds="false" doc:name="MUnit configuration"/>
     <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8081" basePath="/api" doc:name="HTTP Request Configuration"/>
 
-    <munit:test name="post:/customers:application/json:demo-config-201-application/json-FlowTest" description="Verifying functionality of [post:/customers:application/json:demo-config-201-application/json]">
-        <set-payload value="#[getResource('scaffolder/request/post_customers_application_json.json').asString()]" doc:name="Set Payload"/>
-        <http:request config-ref="HTTP_Request_Configuration" method="POST" path="/customers" doc:name="HTTP">
+    <munit:test name="get:/customers/id:demo-config-404-application/json-FlowTest" description="Verifying functionality of [get:/customers/id:demo-config-404-application/json]">
+        <mock:when messageProcessor=".*:.*" doc:name="Mock">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['Query Customer By ID']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[[]]"/>
+        </mock:when>
+        <http:request config-ref="HTTP_Request_Configuration" method="GET" path="/customers/1" doc:name="HTTP">
             <http:request-builder>
-                <http:header headerName="Accept" value="application/json" />
-                <http:header headerName="Content-Type" value="application/json" />
+                <http:header headerName="Accept" value="application/json"/>
+
             </http:request-builder>
+            <http:success-status-code-validator values="404" />
         </http:request>
         <object-to-string-transformer doc:name="http response to string" />
-        <munit:assert-true message="The HTTP Status code is not correct!" condition="#[messageInboundProperty('http.status').is(eq(201))]" doc:name="assert that - http.status eq 201" />
-
+        <munit:assert-true message="The HTTP Status code is not correct!" condition="#[messageInboundProperty('http.status').is(eq(404))]" doc:name="assert that - http.status eq 404" />
+        <munit:assert-on-equals message="The response payload is not correct!" expectedValue="#[getResource('scaffolder/response/get_404_customers_{id}_application_json.json').asString()]" actualValue="#[payload]" doc:name="assert that - payload is as expected" />
     </munit:test>
+
 </mule>
