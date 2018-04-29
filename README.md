@@ -31,7 +31,7 @@ You will need the following things properly installed on your computer.
 * Visit your application at [http://localhost:8081/console](http://localhost:8081/console).
 
 ### Implement List Customers Flow include Pagination, Filters
-In this Flow Filtering customers by different type of criteria and build Dynamic Query.
+In this Flow, Filtering customers by different type of criteria and build Dynamic Query.
 * Expression Component build Dynamic SQL Query.
 * Customer Transformer build MySQL Pagination.
 * Logger Component logging SQL info for Debug purpose.
@@ -70,8 +70,8 @@ In this Flow Filtering customers by different type of criteria and build Dynamic
 
 ![](images/put.png)
 ### Unit Test
-* Munit
-* Mock up service by using mock Component, etc mock database results
+* Munit framework
+* Mock Components, etc mock database results
 * Verification
 * Choice 100% coverage
 * Exception Handling - User not found, return `404`
