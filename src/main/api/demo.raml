@@ -1,0 +1,89 @@
+#%RAML 1.0
+title: CMS API
+baseUri: http://localhost:8081/api/{version}
+version: v1
+
+types:
+  CustomerGet:  !include types/CustomerGet.raml
+  CustomerCreate:  !include types/CustomerCreate.raml
+  Error: !include types/Error.raml
+
+/customers:
+  displayName: Customers
+  get:
+    description: Query Customers by specific query criteria, pagnation suppoted
+    queryParameters:
+      offset?:
+        description: Specify the page that you want to retrieve
+        type: integer
+        example: 0
+      limit?:
+        description: Specify The number of rows in a page request
+        type: integer
+        example: 10
+      startdate?:
+        description: Specify the query criteria startdate
+        type: string
+        example: "2018-04-01"
+      enddate?:
+        description: Specify the query criteria enddate
+        type: string
+        example: "2018-10-01"
+    responses:
+      200:
+        body:
+          application/json:
+            type: CustomerGet[]
+            example: !include /examples/CustomersList.json
+  post:
+      description: Create a new Customer
+      body:
+        application/json:
+          type: CustomerCreate
+          example: !include /examples/CustomerCreate.json
+      responses:
+        201:
+          body:
+            application/json:
+              type: CustomerGet
+              example: !include /examples/CustomerGet.json
+  /{id}:
+    get:
+      description: Get a Customer by id
+      responses:
+        200:
+          body:
+            application/json:
+              type: CustomerGet
+              example: !include examples/CustomerGet.json
+        404:
+          body:
+            application/json:
+              type: Error
+              example: !include examples/ResourceNotFound.json
+    put:
+      description: Update a new Customer
+      body:
+        application/json:
+          type: CustomerCreate
+          example: !include examples/CustomerCreate.json
+      responses:
+        200:
+          body:
+            application/json:
+              type: CustomerCreate
+              example: !include examples/CustomerCreate.json
+        404:
+          body:
+            application/json:
+              type: Error
+              example: !include examples/ResourceNotFound.json
+    delete:
+      description: Delete a Customer by id
+      responses:
+        204:
+        404:
+          body:
+            application/json:
+              type: Error
+              example: !include examples/ResourceNotFound.json          

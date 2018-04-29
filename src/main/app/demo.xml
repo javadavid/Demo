@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="demo-httpListenerConfig" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" />
+    <apikit:config name="demo-config" raml="demo.raml" consoleEnabled="false" doc:name="Router" />
+    <db:mysql-config name="MySQL_Configuration" host="${db.host}" port="${db.port}" user="${db.user}" database="${db.database}" doc:name="MySQL Configuration" password="${db.password}"/>
+    <gzip-compress-transformer name="Java" doc:name="Java" />
+    <custom-transformer class="com.deloitte.integration.transformer.PaginationQueryTransformer" name="PaginationQueryTransformer" doc:name="Java" />
+    <flow name="demo-main">
+        <http:listener config-ref="demo-httpListenerConfig" path="/api/*" doc:name="HTTP" />
+        <apikit:router config-ref="demo-config" doc:name="APIkit Router" />
+        <exception-strategy ref="demo-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy" />
+    </flow>
+    <flow name="demo-console">
+        <http:listener config-ref="demo-httpListenerConfig" path="/console/*" doc:name="HTTP" />
+        <apikit:console config-ref="demo-config" doc:name="APIkit Console" />
+    </flow>
+    <flow name="get:/customers:demo-config">
+        <expression-component doc:name="Build Dynamic Query"><![CDATA[flowVars.where_ge_startdate = (message.inboundProperties.'http.query.params'.startdate == empty)? "":' AND updated_time >= ' + "'"+message.inboundProperties.'http.query.params'.startdate  + "'";
+flowVars.where_le_enddate = (message.inboundProperties.'http.query.params'.enddate == empty)? "":' AND updated_time <= ' + "'" + message.inboundProperties.'http.query.params'.enddate  + "'";]]></expression-component>
+        <transformer ref="PaginationQueryTransformer" doc:name="Build MySQL Pagination"/>
+        <logger message="SELECT id, firstname, lastname, address, created_time, updated_time FROM customer WHERE 1 = 1 #[flowVars.where_ge_startdate] #[flowVars.where_le_enddate] #[payload]" level="DEBUG" doc:name="Logger"/>
+        <db:select config-ref="MySQL_Configuration"  doc:name="GetCustomers">
+            <db:dynamic-query><![CDATA[SELECT id, firstname, lastname, address, created_time, updated_time
+FROM customer 
+WHERE 1 = 1
+#[flowVars.where_ge_startdate]
+#[flowVars.where_le_enddate]
+#[payload]]]></db:dynamic-query>
+        </db:select>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map {
+	id: $.id,
+	firstname: $.firstname,
+	lastname: $.lastname,
+	address: $.address,
+	createdtime: $.created_time as :string {format: "yyyy-MM-dd HH:mm:ss"},
+	updatedtime: $.updated_time as :string {format: "yyyy-MM-dd HH:mm:ss"}
+}]]></dw:set-payload>
+        </dw:transform-message>
+
+    </flow>
+    <flow name="get:/customers/{id}:demo-config">
+        <db:select config-ref="MySQL_Configuration" doc:name="Query Customer By ID">
+            <db:parameterized-query><![CDATA[SELECT id, firstname, lastname, address, created_time, updated_time
+FROM customer 
+where id = #[id]]]></db:parameterized-query>
+        </db:select>
+        <choice doc:name="If Customer Exists">
+            <when expression="#[payload.size() &gt; 0]">
+                <tracking:custom-event event-name="Found Customer Detail Event" doc:name="Found Customer Detail Event">
+                    <tracking:meta-data key="Customer Firstname" value="#[payload[0].firstname]"/>
+                    <tracking:meta-data key="Customer ID" value="#[payload[0].id]"/>
+                    <tracking:meta-data key="Customer Lastname" value="#[payload[0].lastname]"/>
+                </tracking:custom-event>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%var customer = payload[0]
+---
+{
+	id: customer.id,
+	firstname: customer.firstname,
+	lastname: customer.lastname,
+	address: (customer.address default ""),	
+	createdtime: customer.created_time as :string {format: "yyyy-MM-dd HH:mm:ss"},
+	updatedtime: customer.updated_time as :string {format: "yyyy-MM-dd HH:mm:ss"}
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[404]" doc:name="Set not found customer"/>
+                <set-payload value="{ &quot;message&quot; : &quot;Resource not found&quot;, &quot;code&quot; : 1001 }" doc:name="Set Resource not Found"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="post:/customers:application/json:demo-config">
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	firstname: payload.firstname,
+	lastname: payload.lastname,
+	address: payload.address
+}]]></dw:set-payload>
+            <dw:set-variable variableName="originalPayload"><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-variable>
+        </dw:transform-message>
+        <db:insert config-ref="MySQL_Configuration" autoGeneratedKeys="true" autoGeneratedKeysColumnNames="id" doc:name="Insert Customer">
+            <db:parameterized-query><![CDATA[INSERT INTO customer(firstname, lastname, address, created_time, updated_time) VALUES(#[payload.firstname], #[payload.lastname], #[payload.?address], CURDATE(), CURDATE());]]></db:parameterized-query>
+        </db:insert>
+        <tracking:custom-event event-name="NEW Customer Created Event" doc:name="NEW Customer Created Event">
+            <tracking:meta-data key="Customer ID" value="#[payload[0].GENERATED_KEY]"/>
+            <tracking:meta-data key="Customer Firstname" value="#[flowVars.originalPayload.firstname]"/>
+            <tracking:meta-data key="Customer Lastname" value="#[flowVars.originalPayload.lastname]"/>
+        </tracking:custom-event>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+flowVars.originalPayload ++
+id: payload[0].GENERATED_KEY]]></dw:set-payload>
+        </dw:transform-message>
+
+    </flow>
+    <flow name="delete:/customers/{id}:demo-config">
+        <db:select config-ref="MySQL_Configuration" doc:name="Query Customer By ID">
+            <db:parameterized-query><![CDATA[SELECT id, firstname, lastname, address, created_time, updated_time
+FROM customer 
+where id = #[id]]]></db:parameterized-query>
+        </db:select>
+        <choice doc:name="If Customer Exists">
+            <when expression="#[payload.size() &gt; 0]">
+                <db:delete config-ref="MySQL_Configuration" doc:name="Delete Customer">
+                    <db:parameterized-query><![CDATA[delete from customer where id = #[payload[0].id]]]></db:parameterized-query>
+                </db:delete>
+                <set-payload value="#[NullPayload.getInstance()]" doc:name="Set Response"/>
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[404]" doc:name="Set not found customer"/>
+                <set-payload value="{ &quot;message&quot; : &quot;Resource not found&quot;, &quot;code&quot; : 1001 }" mimeType="application/json" doc:name="Set Resource not Found"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="put:/customers/{id}:application/json:demo-config">
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{	
+	firstname: payload.firstname,
+	lastname: payload.lastname,
+	address: payload.address
+}]]></dw:set-payload>
+            <dw:set-variable variableName="originalPayload"><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-variable>
+        </dw:transform-message>
+        <db:select config-ref="MySQL_Configuration" doc:name="Query Customer By ID">
+            <db:parameterized-query><![CDATA[SELECT id, firstname, lastname, address, created_time, updated_time
+FROM customer 
+where id = #[id]]]></db:parameterized-query>
+        </db:select>
+        <choice doc:name="If Customer Exists">
+            <when expression="#[payload.size() &gt; 0]">
+                <logger message="update customer set firstname = '#[flowVars.originalPayload.firstname]', lastname = '#[flowVars.originalPayload.lastname]', address = '#[flowVars.originalPayload.address]', updated_time = now() where id = #[id]" level="INFO" doc:name="Debug Logger Show Update SQL"/>
+                <db:update config-ref="MySQL_Configuration" doc:name="Update Customer">
+                    <db:dynamic-query><![CDATA[update customer set firstname = '#[flowVars.originalPayload.firstname]', lastname = '#[flowVars.originalPayload.lastname]', address = '#[flowVars.originalPayload.address]', updated_time = now() where id = #[id]]]></db:dynamic-query>
+                </db:update>
+                <set-payload value="#[flowVars.originalPayload]" doc:name="Set Response"/>
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="#[404]" doc:name="Set not found customer"/>
+                <set-payload value="{ &quot;message&quot; : &quot;Resource not found&quot;, &quot;code&quot; : 1001 }" mimeType="application/json" doc:name="Set Resource not Found"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+
+
+    <apikit:mapping-exception-strategy name="demo-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Bad request&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>
