@@ -18,6 +18,7 @@ You will need the following things properly installed on your computer.
 * Install Mysql and import the scripts under the `src/main/resources/demo.sql`
 * `git clone <repository-url>` this repository
 * Import Demo into the Mulesoft Anypoint Studio
+* Change the database properties in the file `mule-app.properties`
 
 ## Running / Development
 
