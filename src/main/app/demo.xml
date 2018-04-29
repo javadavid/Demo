@@ -34,6 +34,7 @@ WHERE 1 = 1
 #[flowVars.where_le_enddate]
 #[payload]]]></db:dynamic-query>
         </db:select>
+        <message-properties-transformer doc:name="Message Properties"/>
         <dw:transform-message doc:name="Transform Message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
