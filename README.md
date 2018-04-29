@@ -74,6 +74,7 @@ In this Flow Filtering customers by different type of criteria and build Dynamic
 * Mock up service by using mock Component, etc mock database results
 * Verification
 * Choice 100% coverage
+* Exception Handling - User not found, return `404`
 
 ![](images/unitTest.png)
 
