@@ -19,7 +19,7 @@ You will need the following things properly installed on your computer.
 
 * Install Mysql and import the scripts under the `src/main/resources/demo.sql`
 * `git clone <repository-url>` this repository
-* Import Demo into the Mulesoft Anypoint Studio
+* Import Demo into the Mulesoft Anypoint Studio (Find Maven pom file)
 * If not use `Maven` need to manually add the MySQL JDBC Driver to the project.
 * Change the database properties in the file `mule-app.properties`
 * Turn on Debug ```<AsyncLogger name="org.mule.api.processor.LoggerMessageProcessor" level="DEBUG"/>```
@@ -27,7 +27,7 @@ You will need the following things properly installed on your computer.
 
 ## Running / Development
 
-* Run as Mule Application
+* Run as Mule Application with maven
 * Visit your application at [http://localhost:8081/console](http://localhost:8081/console).
 
 ### Implement List Customers Flow include Pagination, Filters
