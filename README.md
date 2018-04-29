@@ -12,13 +12,16 @@ You will need the following things properly installed on your computer.
 * [Anypoint Studio](https://www.mulesoft.com/platform/studio)
 * [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 * [Maven 3.5.3](https://maven.apache.org/download.cgi)
+* [MySQL JDBC Driver](https://dev.mysql.com/downloads/connector/j/5.1.html)
 
 ## Installation
 
 * Install Mysql and import the scripts under the `src/main/resources/demo.sql`
 * `git clone <repository-url>` this repository
 * Import Demo into the Mulesoft Anypoint Studio
+* If not use `Maven` need to manually add the MySQL JDBC Driver to the project.
 * Change the database properties in the file `mule-app.properties`
+
 
 ## Running / Development
 
